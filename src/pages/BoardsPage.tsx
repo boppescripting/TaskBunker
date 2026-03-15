@@ -99,22 +99,14 @@ export default function BoardsPage() {
       {/* Content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
 
-        {/* Your boards */}
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M4 6h16M4 12h8m-8 6h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none"/>
-              </svg>
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Your Boards</h2>
-              <span className="bg-gray-200 text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded">{owned.length}</span>
-            </div>
-            <button
-              onClick={() => setShowNew(true)}
-              className="flex items-center gap-1.5 text-sm text-sky-600 font-medium hover:text-sky-800 transition"
-            >
-              <span className="text-lg leading-none">+</span> New Board
-            </button>
+        {/* Your boards — only shown when boards exist or form is open */}
+        {(owned.length > 0 || showNew) && <section className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M4 6h16M4 12h8m-8 6h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none"/>
+            </svg>
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Your Boards</h2>
+            <span className="bg-gray-200 text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded">{owned.length}</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -157,7 +149,7 @@ export default function BoardsPage() {
               </button>
             )}
           </div>
-        </section>
+        </section>}
 
         {/* Shared boards */}
         {shared.length > 0 && (
