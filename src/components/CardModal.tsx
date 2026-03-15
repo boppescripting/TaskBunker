@@ -132,6 +132,12 @@ const [saving, setSaving] = useState(false)
     setChecklist(checklist.filter((i) => i.id !== item.id))
   }
 
+  const removeChecklist = async () => {
+    await Promise.all(checklist.map((i) => deleteChecklistItem(boardId, card.id, i.id)))
+    setChecklist([])
+    setShowChecklist(false)
+  }
+
   const submitComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newComment.trim()) return
@@ -222,7 +228,12 @@ const [saving, setSaving] = useState(false)
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-xs text-gray-500 font-medium">Checklist</p>
-                        {checklist.length > 0 && <span className="text-xs text-gray-400">{done}/{checklist.length}</span>}
+                        <div className="flex items-center gap-2">
+                          {checklist.length > 0 && <span className="text-xs text-gray-400">{done}/{checklist.length}</span>}
+                          {canEdit && (
+                            <button onClick={removeChecklist} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Remove</button>
+                          )}
+                        </div>
                       </div>
                       {checklist.length > 0 && (
                         <div className="w-full bg-gray-200 rounded-full h-1.5 mb-3">
