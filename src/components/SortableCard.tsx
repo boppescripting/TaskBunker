@@ -56,7 +56,7 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
         <div className="flex items-center justify-between mt-2 gap-1">
           <div className="flex items-center gap-1.5">
             {card.due_date && (() => {
-              const due = new Date(card.due_date)
+              const due = new Date(card.due_date + 'T00:00:00')
               const now = new Date()
               const overdue = due < now
               const soon = due < new Date(now.getTime() + 2 * 24 * 3600 * 1000)

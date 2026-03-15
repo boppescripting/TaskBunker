@@ -72,7 +72,7 @@ export default function BoardPage() {
       cards.filter((c) => {
         if (filter.search && !c.title.toLowerCase().includes(filter.search.toLowerCase())) return false
         if (filter.labels.length && !filter.labels.some((l) => c.labels.map(String).includes(l))) return false
-        if (filter.dueSoon && (!c.due_date || new Date(c.due_date) > soon)) return false
+        if (filter.dueSoon && (!c.due_date || new Date(c.due_date + 'T00:00:00') > soon)) return false
         return true
       }).map((c) => c.id)
     )
