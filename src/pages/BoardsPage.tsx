@@ -54,11 +54,9 @@ export default function BoardsPage() {
           <div className="flex items-center gap-3">
             {/* Logo mark */}
             <div className="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center shrink-0">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white fill-current">
-                <rect x="3" y="3" width="7" height="11" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                <rect x="3" y="18" width="7" height="3" rx="1.5" />
+              <svg viewBox="0 0 24 24" className="w-5 h-5">
+                <path fill="white" d="M12 2.5L4 7v5.5c0 4.8 3.4 9.3 8 10.5 4.6-1.2 8-5.7 8-10.5V7L12 2.5z"/>
+                <path fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M8.5 12l2.5 2.5 4-5"/>
               </svg>
             </div>
             <span className="font-bold text-gray-900 text-lg tracking-tight">TaskBunker</span>
@@ -181,11 +179,9 @@ export default function BoardsPage() {
         {boards.length === 0 && (
           <div className="text-center py-24">
             <div className="w-16 h-16 bg-sky-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg viewBox="0 0 24 24" className="w-9 h-9 text-sky-500 fill-current">
-                <rect x="3" y="3" width="7" height="11" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                <rect x="3" y="18" width="7" height="3" rx="1.5" />
+              <svg viewBox="0 0 24 24" className="w-9 h-9">
+                <path fill="#0ea5e9" d="M12 2.5L4 7v5.5c0 4.8 3.4 9.3 8 10.5 4.6-1.2 8-5.7 8-10.5V7L12 2.5z"/>
+                <path fill="none" stroke="#e0f2fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M8.5 12l2.5 2.5 4-5"/>
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-800 mb-1">No boards yet</h3>
