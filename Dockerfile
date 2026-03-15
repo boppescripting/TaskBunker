@@ -28,4 +28,4 @@ COPY --from=frontend-builder /app/dist ./frontend
 ENV NODE_ENV=production
 EXPOSE 3001
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "/app/dist/index.js"]
