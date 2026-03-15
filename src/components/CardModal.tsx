@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+
+const mdPlugins = [remarkGfm]
 
 const mdComponents = {
-  a: ({ href, children }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-600 underline hover:text-sky-800">
+  a: ({ children, ...props }: React.ComponentPropsWithoutRef<'a'>) => (
+    <a {...props} target="_blank" rel="noopener noreferrer" className="text-sky-600 underline hover:text-sky-800 break-all">
       {children}
     </a>
   ),
@@ -231,7 +234,7 @@ const [saving, setSaving] = useState(false)
                         className="prose prose-sm max-w-none text-gray-700 cursor-pointer hover:bg-gray-50 rounded p-2 -m-2"
                         onClick={() => canEdit && setEditingDesc(true)}
                       >
-                        <ReactMarkdown components={mdComponents}>{description}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={mdPlugins} components={mdComponents}>{description}</ReactMarkdown>
                       </div>
                     )}
                   </div>
@@ -317,7 +320,7 @@ const [saving, setSaving] = useState(false)
                           )}
                         </div>
                         <div className="prose prose-sm max-w-none bg-gray-50 rounded-lg px-3 py-2 text-gray-700">
-                          <ReactMarkdown components={mdComponents}>{c.text}</ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={mdPlugins} components={mdComponents}>{c.text}</ReactMarkdown>
                         </div>
                       </div>
                     ))}
