@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function FilterBar({ filter, onChange, boardLabels }: Props) {
-  const active = filter.search || filter.labels.length || filter.dueSoon
+  const active = filter.search || filter.labels.length > 0 || filter.dueSoon
 
   const toggleLabel = (id: number) => {
     const sid = String(id)

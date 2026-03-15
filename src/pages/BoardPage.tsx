@@ -48,20 +48,20 @@ export default function BoardPage() {
   )
 
   useEffect(() => {
-    Promise.all([getBoards(), getColumns(boardId), getCards(boardId), getBoardLabels(boardId)]).then(([br, cr, kr, lr]) => {
+    Promise.all([getBoards(), getColumns(boardId), getBoardLabels(boardId)]).then(([br, cr, lr]) => {
       const board = br.data.find((b: any) => b.id === boardId)
       if (!board) { nav('/'); return }
       setBoards(br.data)
       setCurrentBoard(board)
       setColumns(cr.data)
-      setCards(kr.data)
       setBoardLabels(lr.data)
     }).catch(() => nav('/'))
   }, [boardId])
 
+  // Cards re-fetched whenever boardId or showArchived changes (handles both initial load and toggle)
   useEffect(() => {
     getCards(boardId, showArchived).then((r) => setCards(r.data))
-  }, [showArchived, boardId])
+  }, [boardId, showArchived])
 
   const canEdit = currentBoard?.role !== 'viewer'
 
@@ -78,7 +78,9 @@ export default function BoardPage() {
     )
   }, [cards, filter])
 
-  const hasFilter = !!(filter.search || filter.labels.length || filter.dueSoon)
+  const hasFilter = !!(filter.search || filter.labels.length > 0 || filter.dueSoon)
+
+  const cardMap = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards])
 
   const handleAddColumn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -167,7 +169,7 @@ export default function BoardPage() {
     const overCard = currentCards.find((c) => c.id === overId)
     // overId may be a negative column sortable id or positive column droppable id
     const overCol = currentColumns.find((c) => c.id === Math.abs(overId))
-    const targetColId = overCard ? overCard.column_id : (overCol && !overCard ? overCol.id : undefined)
+    const targetColId = overCard ? overCard.column_id : overCol?.id
     if (!targetColId || draggingCard.column_id === targetColId) return
 
     setCards((prev) => prev.map((c) => c.id === activeId ? { ...c, column_id: targetColId } : c))
@@ -297,7 +299,7 @@ export default function BoardPage() {
               <KanbanColumn
                 key={col.id}
                 column={col}
-                cards={col.card_ids.map((cid) => cards.find((c) => c.id === cid)).filter(Boolean) as Card[]}
+                cards={col.card_ids.map((cid) => cardMap.get(cid)).filter(Boolean) as Card[]}
                 filteredCardIds={hasFilter ? filteredCardIds : null}
                 canEdit={canEdit && !showArchived}
                 onAddCard={handleAddCard}

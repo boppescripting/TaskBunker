@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -37,12 +37,7 @@ export default function KanbanColumn({ column, cards, filteredCardIds, canEdit, 
   } = useSortable({ id: -column.id, data: { type: 'column' } })
 
   // Droppable for cards dropped into this column
-  const { setNodeRef: setDropRef } = useDroppable({ id: column.id })
-
-  const setCardsRef = useCallback(
-    (node: HTMLDivElement | null) => { setDropRef(node) },
-    [setDropRef]
-  )
+  const { setNodeRef: setCardsRef } = useDroppable({ id: column.id })
 
   const submitCard = (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,6 +66,7 @@ export default function KanbanColumn({ column, cards, filteredCardIds, canEdit, 
   return (
     <div
       ref={setSortRef}
+      className="shrink-0"
       style={{ width: '272px', transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
     >
       <div className={`bg-black/20 backdrop-blur-sm rounded-xl flex flex-col max-h-[calc(100vh-9rem)] ${atLimit ? 'ring-2 ring-red-400/60' : 'ring-1 ring-white/10'}`}>
