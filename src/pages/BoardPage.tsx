@@ -132,6 +132,11 @@ export default function BoardPage() {
     }
   }
 
+  const handleToggleComplete = async (card: Card) => {
+    const r = await updateCard(boardId, card.id, { completed: !card.completed } as any)
+    setCards(cards.map((c) => c.id === card.id ? r.data : c))
+  }
+
   const handleArchiveCard = async (card: Card) => {
     await updateCard(boardId, card.id, { archived: true } as any)
     setCards(cards.filter((c) => c.id !== card.id))
@@ -306,6 +311,7 @@ export default function BoardPage() {
                 onDeleteColumn={handleDeleteColumn}
                 onCardClick={setEditingCard}
                 onDeleteCard={handleDeleteCard}
+                onToggleComplete={handleToggleComplete}
                 boardId={boardId}
               />
             ))}

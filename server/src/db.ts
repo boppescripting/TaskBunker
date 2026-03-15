@@ -17,6 +17,7 @@ export function parseCard(row: Record<string, any>) {
     ...row,
     labels: JSON.parse((row.labels as string) || '[]'),
     archived: Boolean(row.archived),
+    completed: Boolean(row.completed),
     checklist_total: Number(row.checklist_total ?? 0),
     checklist_done: Number(row.checklist_done ?? 0),
   }
@@ -127,6 +128,9 @@ export async function initDb() {
       ALTER TABLE cards ADD COLUMN cover_color TEXT;
       ALTER TABLE cards ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;
     `)
+  }
+  if (!colNames.includes('completed')) {
+    await db.execute("ALTER TABLE cards ADD COLUMN completed INTEGER NOT NULL DEFAULT 0")
   }
   if (!colNames.includes('wip_limit')) {
     // wip_limit is on columns

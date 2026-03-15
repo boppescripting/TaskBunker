@@ -16,9 +16,10 @@ interface Props {
   onDeleteColumn: (colId: number) => void
   onCardClick: (card: Card) => void
   onDeleteCard: (card: Card) => void
+  onToggleComplete: (card: Card) => void
 }
 
-export default function KanbanColumn({ column, cards, filteredCardIds, canEdit, boardId, onAddCard, onDeleteColumn, onCardClick, onDeleteCard }: Props) {
+export default function KanbanColumn({ column, cards, filteredCardIds, canEdit, boardId, onAddCard, onDeleteColumn, onCardClick, onDeleteCard, onToggleComplete }: Props) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [editingTitle, setEditingTitle] = useState(false)
@@ -153,6 +154,7 @@ export default function KanbanColumn({ column, cards, filteredCardIds, canEdit, 
                 dimmed={filteredCardIds !== null && !filteredCardIds.has(card.id)}
                 onClick={() => onCardClick(card)}
                 onDelete={() => onDeleteCard(card)}
+                onToggleComplete={() => onToggleComplete(card)}
               />
             ))}
           </SortableContext>

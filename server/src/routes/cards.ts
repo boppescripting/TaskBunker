@@ -47,7 +47,7 @@ router.patch('/:cardId', async (req: AuthRequest, res) => {
   const cardId = Number(req.params.cardId)
   const role = await getRole(req.userId!, boardId)
   if (!role || role === 'viewer') return res.status(403).json({ error: 'Forbidden' })
-  const { title, description, due_date, labels, cover_color, column_id, position, archived } = req.body
+  const { title, description, due_date, labels, cover_color, column_id, position, archived, completed } = req.body
   const fields: string[] = []
   const vals: any[] = []
   if (title !== undefined) { fields.push('title = ?'); vals.push(title) }
@@ -58,6 +58,7 @@ router.patch('/:cardId', async (req: AuthRequest, res) => {
   if (column_id !== undefined) { fields.push('column_id = ?'); vals.push(column_id) }
   if (position !== undefined) { fields.push('position = ?'); vals.push(position) }
   if (archived !== undefined) { fields.push('archived = ?'); vals.push(archived ? 1 : 0) }
+  if (completed !== undefined) { fields.push('completed = ?'); vals.push(completed ? 1 : 0) }
   if (!fields.length) return res.status(400).json({ error: 'Nothing to update' })
   vals.push(cardId, boardId)
   await db.execute({ sql: `UPDATE cards SET ${fields.join(', ')} WHERE id = ? AND board_id = ?`, args: vals })

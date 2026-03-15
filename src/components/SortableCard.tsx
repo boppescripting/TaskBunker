@@ -9,9 +9,10 @@ interface Props {
   dimmed: boolean
   onClick: () => void
   onDelete: () => void
+  onToggleComplete: () => void
 }
 
-export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete }: Props) {
+export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete, onToggleComplete }: Props) {
   const boardLabels = useStore((s) => s.boardLabels)
   const labelsExpanded = useStore((s) => s.labelsExpanded)
   const toggleLabelsExpanded = useStore((s) => s.toggleLabelsExpanded)
@@ -48,7 +49,7 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
           </div>
         )}
 
-        {/* Drag handle strip + title row */}
+        {/* Drag handle strip + complete toggle + title row */}
         <div className="flex items-start gap-1.5">
           <div
             {...attributes}
@@ -57,7 +58,18 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
           >
             ⠿
           </div>
-          <p className="text-sm text-gray-800 leading-snug flex-1 cursor-pointer" onClick={onClick}>
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleComplete() }}
+            className={`mt-0.5 shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${card.completed ? 'bg-emerald-500 border-emerald-500 opacity-100' : 'border-gray-300 opacity-0 group-hover:opacity-100 hover:border-emerald-400'}`}
+            title={card.completed ? 'Mark incomplete' : 'Mark complete'}
+          >
+            {card.completed && (
+              <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+          <p className={`text-sm leading-snug flex-1 cursor-pointer ${card.completed ? 'text-gray-400 line-through' : 'text-gray-800'}`} onClick={onClick}>
             {card.title}
           </p>
         </div>

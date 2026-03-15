@@ -38,6 +38,7 @@ export interface Card {
   labels: string[]
   cover_color: string | null
   archived: boolean
+  completed: boolean
   position: number
   checklist_total: number
   checklist_done: number
