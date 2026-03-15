@@ -12,27 +12,23 @@ interface Props {
 }
 
 export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete }: Props) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: card.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: card.id,
+    data: { type: 'card' },
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : dimmed ? 0.35 : 1
+    opacity: isDragging ? 0.4 : dimmed ? 0.35 : 1,
   }
 
   const cardLabels = LABELS.filter((l) => card.labels?.includes(l.id))
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="bg-white rounded-lg shadow-sm overflow-hidden cursor-grab active:cursor-grabbing group"
-    >
-      {card.cover_color && (
-        <div className={`${card.cover_color} h-8 w-full`} />
-      )}
+    <div ref={setNodeRef} style={style} className="bg-white rounded-lg shadow-sm overflow-hidden group select-none">
+      {card.cover_color && <div className={`${card.cover_color} h-8 w-full`} />}
+
       <div className="p-3">
         {cardLabels.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
@@ -41,7 +37,21 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
             ))}
           </div>
         )}
-        <p className="text-sm text-gray-800 leading-snug" onClick={onClick}>{card.title}</p>
+
+        {/* Drag handle strip + title row */}
+        <div className="flex items-start gap-1">
+          <div
+            {...attributes}
+            {...listeners}
+            className="mt-0.5 text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing shrink-0 touch-none leading-none"
+          >
+            ⠿
+          </div>
+          <p className="text-sm text-gray-800 leading-snug flex-1 cursor-pointer" onClick={onClick}>
+            {card.title}
+          </p>
+        </div>
+
         <div className="flex items-center justify-between mt-2 gap-1">
           <div className="flex items-center gap-2">
             {card.due_date && (() => {

@@ -1,22 +1,21 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
-  type DragStartEvent, type DragOverEvent, type DragEndEvent
+  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors,
+  type DragStartEvent, type DragOverEvent, type DragEndEvent,
 } from '@dnd-kit/core'
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { useStore } from '../store'
 import {
   getBoards, getColumns, getCards,
   createColumn, updateColumn, deleteColumn,
-  createCard, updateCard, deleteCard, updateBoard
+  createCard, updateCard, deleteCard, updateBoard,
 } from '../api'
 import type { Column, Card } from '../types'
 import KanbanColumn from '../components/KanbanColumn'
 import CardModal from '../components/CardModal'
 import MembersModal from '../components/MembersModal'
 import FilterBar from '../components/FilterBar'
-import SortableColumnWrapper from '../components/SortableColumnWrapper'
 
 export interface FilterState {
   search: string
@@ -40,7 +39,11 @@ export default function BoardPage() {
   const [addingCol, setAddingCol] = useState(false)
   const [filter, setFilter] = useState<FilterState>({ search: '', labels: [], dueSoon: false, assignedToMe: false })
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  // Require 8px movement before drag starts, prevents accidental drags on clicks
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  )
 
   useEffect(() => {
     Promise.all([getBoards(), getColumns(boardId), getCards(boardId)]).then(([br, cr, kr]) => {
@@ -54,16 +57,11 @@ export default function BoardPage() {
   }, [boardId])
 
   useEffect(() => {
-    if (showArchived) {
-      getCards(boardId, true).then((r) => setCards(r.data))
-    } else {
-      getCards(boardId, false).then((r) => setCards(r.data))
-    }
+    getCards(boardId, showArchived).then((r) => setCards(r.data))
   }, [showArchived, boardId])
 
   const canEdit = currentBoard?.role !== 'viewer'
 
-  // Filter cards
   const filteredCardIds = useMemo(() => {
     const now = new Date()
     const soon = new Date(now.getTime() + 2 * 24 * 3600 * 1000)
@@ -77,7 +75,7 @@ export default function BoardPage() {
     )
   }, [cards, filter])
 
-  const hasFilter = filter.search || filter.labels.length || filter.dueSoon
+  const hasFilter = !!(filter.search || filter.labels.length || filter.dueSoon)
 
   const handleAddColumn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,8 +111,7 @@ export default function BoardPage() {
     const col = columns.find((c) => c.id === colId)
     if (col) {
       const newIds = [...col.card_ids, newCard.id]
-      const updated = { ...col, card_ids: newIds }
-      setColumns(columns.map((c) => (c.id === colId ? updated : c)))
+      setColumns(columns.map((c) => c.id === colId ? { ...col, card_ids: newIds } : c))
       await updateColumn(boardId, colId, { card_ids: newIds })
     }
   }
@@ -125,7 +122,7 @@ export default function BoardPage() {
     const col = columns.find((c) => c.id === card.column_id)
     if (col) {
       const newIds = col.card_ids.filter((i) => i !== card.id)
-      setColumns(columns.map((c) => (c.id === col.id ? { ...col, card_ids: newIds } : c)))
+      setColumns(columns.map((c) => c.id === col.id ? { ...col, card_ids: newIds } : c))
       await updateColumn(boardId, col.id, { card_ids: newIds })
     }
   }
@@ -134,30 +131,35 @@ export default function BoardPage() {
     await updateCard(boardId, card.id, { archived: true } as any)
     setCards(cards.filter((c) => c.id !== card.id))
     const col = columns.find((c) => c.id === card.column_id)
-    if (col) {
-      const newIds = col.card_ids.filter((i) => i !== card.id)
-      setColumns(columns.map((c) => (c.id === col.id ? { ...col, card_ids: newIds } : c)))
-    }
+    if (col) setColumns(columns.map((c) => c.id === col.id ? { ...col, card_ids: col.card_ids.filter((i) => i !== card.id) } : c))
     setEditingCard(null)
   }
 
-  // DnD
+  // ── Drag handlers ──────────────────────────────────────────────────────────
+
   const onDragStart = ({ active }: DragStartEvent) => {
-    const card = cards.find((c) => c.id === active.id)
-    if (card) { setActiveCard(card); return }
-    if (columns.find((c) => c.id === active.id)) setActiveColId(active.id as number)
+    const type = active.data.current?.type
+    if (type === 'card') {
+      const card = cards.find((c) => c.id === active.id)
+      if (card) setActiveCard(card)
+    } else if (type === 'column') {
+      setActiveColId(active.id as number)
+    }
   }
 
   const onDragOver = ({ active, over }: DragOverEvent) => {
-    if (!over || activeColId) return
+    if (!over || active.data.current?.type === 'column') return
+
     const activeId = active.id as number
     const overId = over.id as number
     const draggingCard = cards.find((c) => c.id === activeId)
     if (!draggingCard) return
+
     const overCard = cards.find((c) => c.id === overId)
     const overCol = columns.find((c) => c.id === overId)
     const targetColId = overCard ? overCard.column_id : overCol?.id
     if (!targetColId || draggingCard.column_id === targetColId) return
+
     setCards((prev) => prev.map((c) => c.id === activeId ? { ...c, column_id: targetColId } : c))
     setColumns((prev) => prev.map((col) => {
       if (col.id === draggingCard.column_id) return { ...col, card_ids: col.card_ids.filter((i) => i !== activeId) }
@@ -170,45 +172,51 @@ export default function BoardPage() {
     setActiveCard(null)
     setActiveColId(null)
     if (!over) return
+
     const activeId = active.id as number
     const overId = over.id as number
+    const type = active.data.current?.type
 
-    // Column reorder
-    if (activeColId !== null) {
+    if (type === 'column') {
       if (activeId === overId) return
-      const oldIdx = (currentBoard?.column_ids || []).indexOf(activeId)
-      const newIdx = (currentBoard?.column_ids || []).indexOf(overId)
+      const colIds = currentBoard?.column_ids || []
+      const oldIdx = colIds.indexOf(activeId)
+      const newIdx = colIds.indexOf(overId)
       if (oldIdx === -1 || newIdx === -1) return
-      const newIds = arrayMove(currentBoard!.column_ids, oldIdx, newIdx)
+      const newIds = arrayMove(colIds, oldIdx, newIdx)
       setCurrentBoard({ ...currentBoard!, column_ids: newIds })
       await updateBoard(boardId, { column_ids: newIds })
       return
     }
 
-    // Card reorder/move
-    const draggingCard = cards.find((c) => c.id === activeId)
-    if (!draggingCard) return
-    const col = columns.find((c) => c.card_ids.includes(activeId))
-    if (!col) return
-    const overCard = cards.find((c) => c.id === overId)
-    if (overCard && overCard.column_id === draggingCard.column_id) {
-      const oldIdx = col.card_ids.indexOf(activeId)
-      const newIdx = col.card_ids.indexOf(overId)
-      if (oldIdx !== newIdx) {
-        const newIds = arrayMove(col.card_ids, oldIdx, newIdx)
-        setColumns(columns.map((c) => c.id === col.id ? { ...col, card_ids: newIds } : c))
-        await updateColumn(boardId, col.id, { card_ids: newIds })
-      }
-    } else {
-      await updateCard(boardId, activeId, { column_id: draggingCard.column_id })
-      for (const c of columns) {
-        await updateColumn(boardId, c.id, { card_ids: c.card_ids })
+    if (type === 'card') {
+      const draggingCard = cards.find((c) => c.id === activeId)
+      if (!draggingCard) return
+      const col = columns.find((c) => c.card_ids.includes(activeId))
+      if (!col) return
+      const overCard = cards.find((c) => c.id === overId)
+
+      if (overCard && overCard.column_id === draggingCard.column_id) {
+        // Reorder within same column
+        const oldIdx = col.card_ids.indexOf(activeId)
+        const newIdx = col.card_ids.indexOf(overId)
+        if (oldIdx !== newIdx) {
+          const newIds = arrayMove(col.card_ids, oldIdx, newIdx)
+          setColumns(columns.map((c) => c.id === col.id ? { ...col, card_ids: newIds } : c))
+          await updateColumn(boardId, col.id, { card_ids: newIds })
+        }
+      } else {
+        // Cross-column drop — persist new column and both columns' order
+        await updateCard(boardId, activeId, { column_id: draggingCard.column_id })
+        for (const c of columns) {
+          await updateColumn(boardId, c.id, { card_ids: c.card_ids })
+        }
       }
     }
   }
 
   const orderedColumns = currentBoard
-    ? (currentBoard.column_ids || []).map((id) => columns.find((c) => c.id === id)).filter(Boolean) as Column[]
+    ? (currentBoard.column_ids || []).map((cid) => columns.find((c) => c.id === cid)).filter(Boolean) as Column[]
     : columns
 
   return (
@@ -231,28 +239,24 @@ export default function BoardPage() {
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
           <SortableContext items={orderedColumns.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
             {orderedColumns.map((col) => (
-              <SortableColumnWrapper key={col.id} id={col.id}>
-                {(dragHandleProps) => (
-                  <KanbanColumn
-                    column={col}
-                    cards={col.card_ids.map((cid) => cards.find((c) => c.id === cid)).filter(Boolean) as Card[]}
-                    filteredCardIds={hasFilter ? filteredCardIds : null}
-                    canEdit={canEdit && !showArchived}
-                    dragHandleProps={dragHandleProps}
-                    onAddCard={handleAddCard}
-                    onDeleteColumn={handleDeleteColumn}
-                    onCardClick={setEditingCard}
-                    onDeleteCard={handleDeleteCard}
-                    boardId={boardId}
-                  />
-                )}
-              </SortableColumnWrapper>
+              <KanbanColumn
+                key={col.id}
+                column={col}
+                cards={col.card_ids.map((cid) => cards.find((c) => c.id === cid)).filter(Boolean) as Card[]}
+                filteredCardIds={hasFilter ? filteredCardIds : null}
+                canEdit={canEdit && !showArchived}
+                onAddCard={handleAddCard}
+                onDeleteColumn={handleDeleteColumn}
+                onCardClick={setEditingCard}
+                onDeleteCard={handleDeleteCard}
+                boardId={boardId}
+              />
             ))}
           </SortableContext>
 
-          <DragOverlay>
+          <DragOverlay dropAnimation={null}>
             {activeCard && (
-              <div className="bg-white rounded-lg shadow-xl p-3 w-64 text-sm font-medium text-gray-800 rotate-2 opacity-90">
+              <div className="bg-white rounded-lg shadow-xl p-3 w-64 text-sm font-medium text-gray-800 rotate-1 opacity-95">
                 {activeCard.title}
               </div>
             )}
@@ -304,14 +308,13 @@ export default function BoardPage() {
           onClose={() => setEditingCard(null)}
           onSave={async (data) => {
             const r = await updateCard(boardId, editingCard.id, data)
-            setCards(cards.map((c) => (c.id === editingCard.id ? r.data : c)))
+            setCards(cards.map((c) => c.id === editingCard.id ? r.data : c))
             setEditingCard(r.data)
           }}
           onDelete={() => { handleDeleteCard(editingCard); setEditingCard(null) }}
           onArchive={() => handleArchiveCard(editingCard)}
           onCardMoved={(updatedCard) => {
             setCards(cards.map((c) => c.id === updatedCard.id ? updatedCard : c))
-            // Update old and new column card_ids
             const oldCol = columns.find((c) => c.id === editingCard.column_id)
             const newCol = columns.find((c) => c.id === updatedCard.column_id)
             setColumns(columns.map((c) => {
