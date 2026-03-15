@@ -101,6 +101,14 @@ export async function initDb() {
       action TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS board_labels (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      board_id INTEGER NOT NULL,
+      name TEXT NOT NULL DEFAULT '',
+      color TEXT NOT NULL,
+      position INTEGER NOT NULL DEFAULT 0
+    );
   `)
 
   // Migrations for existing installs

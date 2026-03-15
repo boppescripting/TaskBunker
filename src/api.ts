@@ -75,3 +75,13 @@ export const removeAssignee = (boardId: number, cardId: number, userId: number) 
 // Activity
 export const getCardActivity = (boardId: number, cardId: number) =>
   api.get(`/boards/${boardId}/cards/${cardId}/activity`)
+
+// Board labels
+export const getBoardLabels = (boardId: number) =>
+  api.get(`/boards/${boardId}/labels`)
+export const createBoardLabel = (boardId: number, color: string, name?: string) =>
+  api.post(`/boards/${boardId}/labels`, { color, name })
+export const updateBoardLabel = (boardId: number, labelId: number, data: { name?: string; color?: string }) =>
+  api.patch(`/boards/${boardId}/labels/${labelId}`, data)
+export const deleteBoardLabel = (boardId: number, labelId: number) =>
+  api.delete(`/boards/${boardId}/labels/${labelId}`)

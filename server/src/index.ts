@@ -7,6 +7,7 @@ import authRouter from './routes/auth'
 import boardsRouter from './routes/boards'
 import columnsRouter from './routes/columns'
 import cardsRouter from './routes/cards'
+import labelsRouter from './routes/labels'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -23,6 +24,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/boards', boardsRouter)
 app.use('/api/boards/:boardId/columns', columnsRouter)
 app.use('/api/boards/:boardId/cards', cardsRouter)
+app.use('/api/boards/:boardId/labels', labelsRouter)
 
 // Serve frontend in production
 if (isProd) {

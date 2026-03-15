@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
-import type { Card, ChecklistItem, Comment, Assignee, ActivityEntry, Column, Board } from '../types'
-import { LABELS, COVER_COLORS } from '../types'
+import type { Card, ChecklistItem, Comment, Assignee, ActivityEntry, Column, Board, BoardLabel } from '../types'
+import { LABEL_COLORS, COVER_COLORS } from '../types'
 import {
   getChecklist, addChecklistItem, updateChecklistItem, deleteChecklistItem,
   getComments, addComment, deleteComment,
   getAssignees, addAssignee, removeAssignee,
-  getCardActivity, getBoardMembers, moveCard, copyCard
+  getCardActivity, getBoardMembers, moveCard, copyCard,
+  updateBoardLabel, createBoardLabel, deleteBoardLabel,
 } from '../api'
 
 type Tab = 'details' | 'comments' | 'activity'
@@ -16,6 +17,7 @@ interface Props {
   boardId: number
   columns: Column[]
   boards: Board[]
+  boardLabels: BoardLabel[]
   currentUserId: number
   canEdit: boolean
   onClose: () => void
@@ -24,9 +26,10 @@ interface Props {
   onArchive: () => void
   onCardMoved: (card: Card) => void
   onCardCopied: (card: Card) => void
+  onLabelsChanged: (labels: BoardLabel[]) => void
 }
 
-export default function CardModal({ card, boardId, columns, boards, currentUserId, canEdit, onClose, onSave, onDelete, onArchive, onCardMoved, onCardCopied }: Props) {
+export default function CardModal({ card, boardId, columns, boards, boardLabels: initialBoardLabels, currentUserId, canEdit, onClose, onSave, onDelete, onArchive, onCardMoved, onCardCopied, onLabelsChanged }: Props) {
   const [title, setTitle] = useState(card.title)
   const [description, setDescription] = useState(card.description || '')
   const [editingDesc, setEditingDesc] = useState(false)
@@ -40,6 +43,10 @@ export default function CardModal({ card, boardId, columns, boards, currentUserI
   const [assignees, setAssignees] = useState<Assignee[]>([])
   const [members, setMembers] = useState<{ user_id: number; username: string; email: string }[]>([])
   const [activity, setActivity] = useState<ActivityEntry[]>([])
+  const [boardLabels, setBoardLabels] = useState<BoardLabel[]>(initialBoardLabels)
+  const [editingLabelId, setEditingLabelId] = useState<number | null>(null)
+  const [editingLabelName, setEditingLabelName] = useState('')
+  const [editingLabelColor, setEditingLabelColor] = useState('')
   const [tab, setTab] = useState<Tab>('details')
   const [saving, setSaving] = useState(false)
   const [showMove, setShowMove] = useState(false)
@@ -65,8 +72,43 @@ export default function CardModal({ card, boardId, columns, boards, currentUserI
     setSaving(false)
   }
 
-  const toggleLabel = (id: string) =>
-    setLabels((prev) => prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id])
+  const toggleLabel = (id: number) => {
+    const sid = String(id)
+    setLabels((prev) => prev.includes(sid) ? prev.filter((l) => l !== sid) : [...prev, sid])
+  }
+
+  const startEditLabel = (l: BoardLabel) => {
+    setEditingLabelId(l.id)
+    setEditingLabelName(l.name)
+    setEditingLabelColor(l.color)
+  }
+
+  const saveLabel = async () => {
+    if (!editingLabelId) return
+    const r = await updateBoardLabel(boardId, editingLabelId, { name: editingLabelName, color: editingLabelColor })
+    const updated = boardLabels.map((l) => l.id === editingLabelId ? r.data : l)
+    setBoardLabels(updated)
+    onLabelsChanged(updated)
+    setEditingLabelId(null)
+  }
+
+  const addLabel = async () => {
+    const color = LABEL_COLORS[boardLabels.length % LABEL_COLORS.length]
+    const r = await createBoardLabel(boardId, color)
+    const updated = [...boardLabels, r.data]
+    setBoardLabels(updated)
+    onLabelsChanged(updated)
+    startEditLabel(r.data)
+  }
+
+  const removeLabel = async (labelId: number) => {
+    await deleteBoardLabel(boardId, labelId)
+    const updated = boardLabels.filter((l) => l.id !== labelId)
+    setBoardLabels(updated)
+    onLabelsChanged(updated)
+    setLabels((prev) => prev.filter((id) => id !== String(labelId)))
+    setEditingLabelId(null)
+  }
 
   const addItem = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -272,17 +314,58 @@ export default function CardModal({ card, boardId, columns, boards, currentUserI
               {/* Labels */}
               <div>
                 <p className="text-xs text-gray-500 font-medium mb-1">Labels</p>
-                <div className="flex flex-wrap gap-1">
-                  {LABELS.map((l) => (
-                    <button
-                      key={l.id}
-                      onClick={() => canEdit && toggleLabel(l.id)}
-                      className={`${l.color} px-2 py-0.5 rounded text-xs font-medium text-white transition ${labels.includes(l.id) ? 'ring-2 ring-offset-1 ring-gray-500' : 'opacity-50 hover:opacity-80'}`}
-                    >
-                      {l.id}
-                    </button>
+                <div className="space-y-1">
+                  {boardLabels.map((l) => (
+                    <div key={l.id} className="flex items-center gap-1">
+                      <button
+                        onClick={() => toggleLabel(l.id)}
+                        className={`${l.color} flex-1 text-left px-2 py-1 rounded text-xs font-medium text-white transition truncate ${labels.includes(String(l.id)) ? 'ring-2 ring-offset-1 ring-gray-500' : 'opacity-60 hover:opacity-90'}`}
+                      >
+                        {l.name || <span className="italic opacity-70">unnamed</span>}
+                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => startEditLabel(l)}
+                          className="text-gray-400 hover:text-gray-600 text-xs px-1 shrink-0"
+                        >✎</button>
+                      )}
+                    </div>
                   ))}
                 </div>
+
+                {/* Inline label editor */}
+                {editingLabelId !== null && (
+                  <div className="mt-2 p-2 bg-gray-50 rounded border space-y-2">
+                    <input
+                      autoFocus
+                      className="w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-sky-300"
+                      placeholder="Label name…"
+                      value={editingLabelName}
+                      onChange={(e) => setEditingLabelName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveLabel() }}
+                    />
+                    <div className="flex flex-wrap gap-1">
+                      {LABEL_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => setEditingLabelColor(c)}
+                          className={`${c} w-5 h-5 rounded ${editingLabelColor === c ? 'ring-2 ring-offset-1 ring-gray-600' : ''}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={saveLabel} className="bg-sky-600 text-white text-xs rounded px-2 py-1 hover:bg-sky-700">Save</button>
+                      <button onClick={() => setEditingLabelId(null)} className="text-gray-500 text-xs px-2 py-1 hover:text-gray-700">Cancel</button>
+                      <button onClick={() => removeLabel(editingLabelId)} className="text-red-400 text-xs px-2 py-1 hover:text-red-600 ml-auto">Delete</button>
+                    </div>
+                  </div>
+                )}
+
+                {canEdit && editingLabelId === null && (
+                  <button onClick={addLabel} className="mt-1 text-xs text-gray-400 hover:text-gray-600 w-full text-left">
+                    + Add label
+                  </button>
+                )}
               </div>
 
               {/* Due date */}

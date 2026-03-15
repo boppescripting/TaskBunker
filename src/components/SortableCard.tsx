@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Card } from '../types'
-import { LABELS } from '../types'
+import { useStore } from '../store'
 
 interface Props {
   card: Card
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete }: Props) {
+  const boardLabels = useStore((s) => s.boardLabels)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: 'card' },
@@ -23,7 +24,7 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
     opacity: isDragging ? 0.4 : dimmed ? 0.35 : 1,
   }
 
-  const cardLabels = LABELS.filter((l) => card.labels?.includes(l.id))
+  const cardLabels = boardLabels.filter((l) => card.labels?.includes(String(l.id)))
 
   return (
     <div ref={setNodeRef} style={style} className="bg-white rounded-lg shadow-sm overflow-hidden group select-none">
@@ -33,7 +34,7 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
         {cardLabels.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {cardLabels.map((l) => (
-              <span key={l.id} className={`${l.color} h-2 w-8 rounded-full`} />
+              <span key={l.id} className={`${l.color} h-2 rounded-full px-1 min-w-[2rem]`} title={l.name} />
             ))}
           </div>
         )}

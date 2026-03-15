@@ -34,6 +34,14 @@ export interface Card {
   position: number
 }
 
+export interface BoardLabel {
+  id: number
+  board_id: number
+  name: string
+  color: string
+  position: number
+}
+
 export interface ChecklistItem {
   id: number
   card_id: number
@@ -65,15 +73,10 @@ export interface ActivityEntry {
   created_at: string
 }
 
-export const LABELS = [
-  { id: 'red', color: 'bg-red-400', text: 'text-red-700' },
-  { id: 'orange', color: 'bg-orange-400', text: 'text-orange-700' },
-  { id: 'yellow', color: 'bg-yellow-400', text: 'text-yellow-700' },
-  { id: 'green', color: 'bg-emerald-400', text: 'text-emerald-700' },
-  { id: 'blue', color: 'bg-sky-400', text: 'text-sky-700' },
-  { id: 'purple', color: 'bg-violet-400', text: 'text-violet-700' },
-  { id: 'pink', color: 'bg-pink-400', text: 'text-pink-700' },
-  { id: 'teal', color: 'bg-teal-400', text: 'text-teal-700' },
+export const LABEL_COLORS = [
+  'bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-emerald-400',
+  'bg-sky-400', 'bg-violet-400', 'bg-pink-400', 'bg-teal-400',
+  'bg-rose-500', 'bg-indigo-400', 'bg-lime-400', 'bg-cyan-400',
 ]
 
 export const COVER_COLORS = [

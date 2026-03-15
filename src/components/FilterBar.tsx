@@ -1,18 +1,20 @@
 import type { FilterState } from '../pages/BoardPage'
-import { LABELS } from '../types'
+import type { BoardLabel } from '../types'
 
 interface Props {
   filter: FilterState
   onChange: (f: FilterState) => void
+  boardLabels: BoardLabel[]
 }
 
-export default function FilterBar({ filter, onChange }: Props) {
+export default function FilterBar({ filter, onChange, boardLabels }: Props) {
   const active = filter.search || filter.labels.length || filter.dueSoon
 
-  const toggleLabel = (id: string) => {
-    const labels = filter.labels.includes(id)
-      ? filter.labels.filter((l) => l !== id)
-      : [...filter.labels, id]
+  const toggleLabel = (id: number) => {
+    const sid = String(id)
+    const labels = filter.labels.includes(sid)
+      ? filter.labels.filter((l) => l !== sid)
+      : [...filter.labels, sid]
     onChange({ ...filter, labels })
   }
 
@@ -24,13 +26,16 @@ export default function FilterBar({ filter, onChange }: Props) {
         value={filter.search}
         onChange={(e) => onChange({ ...filter, search: e.target.value })}
       />
-      <div className="flex gap-1">
-        {LABELS.map((l) => (
+      <div className="flex gap-1 flex-wrap">
+        {boardLabels.map((l) => (
           <button
             key={l.id}
             onClick={() => toggleLabel(l.id)}
-            className={`${l.color} w-5 h-5 rounded-sm transition ${filter.labels.includes(l.id) ? 'ring-2 ring-white' : 'opacity-60 hover:opacity-100'}`}
-          />
+            title={l.name || l.color}
+            className={`${l.color} h-5 rounded px-2 text-xs font-medium text-white/90 transition ${filter.labels.includes(String(l.id)) ? 'ring-2 ring-white' : 'opacity-60 hover:opacity-100'}`}
+          >
+            {l.name || ''}
+          </button>
         ))}
       </div>
       <button

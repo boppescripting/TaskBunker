@@ -10,6 +10,7 @@ import {
   getBoards, getColumns, getCards,
   createColumn, updateColumn, deleteColumn,
   createCard, updateCard, deleteCard, updateBoard,
+  getBoardLabels,
 } from '../api'
 import type { Column, Card } from '../types'
 import KanbanColumn from '../components/KanbanColumn'
@@ -28,7 +29,7 @@ export default function BoardPage() {
   const { id } = useParams<{ id: string }>()
   const boardId = Number(id)
   const nav = useNavigate()
-  const { user, boards, setBoards, currentBoard, setCurrentBoard, columns, setColumns, cards, setCards } = useStore()
+  const { user, boards, setBoards, currentBoard, setCurrentBoard, columns, setColumns, cards, setCards, boardLabels, setBoardLabels } = useStore()
 
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [activeColId, setActiveColId] = useState<number | null>(null)
@@ -47,13 +48,14 @@ export default function BoardPage() {
   )
 
   useEffect(() => {
-    Promise.all([getBoards(), getColumns(boardId), getCards(boardId)]).then(([br, cr, kr]) => {
+    Promise.all([getBoards(), getColumns(boardId), getCards(boardId), getBoardLabels(boardId)]).then(([br, cr, kr, lr]) => {
       const board = br.data.find((b: any) => b.id === boardId)
       if (!board) { nav('/'); return }
       setBoards(br.data)
       setCurrentBoard(board)
       setColumns(cr.data)
       setCards(kr.data)
+      setBoardLabels(lr.data)
     }).catch(() => nav('/'))
   }, [boardId])
 
@@ -69,7 +71,7 @@ export default function BoardPage() {
     return new Set(
       cards.filter((c) => {
         if (filter.search && !c.title.toLowerCase().includes(filter.search.toLowerCase())) return false
-        if (filter.labels.length && !filter.labels.some((l) => c.labels.includes(l))) return false
+        if (filter.labels.length && !filter.labels.some((l) => c.labels.map(String).includes(l))) return false
         if (filter.dueSoon && (!c.due_date || new Date(c.due_date) > soon)) return false
         return true
       }).map((c) => c.id)
@@ -249,7 +251,7 @@ export default function BoardPage() {
         <button onClick={() => setShowMembers(true)} className="text-white/80 hover:text-white text-sm">Members</button>
       </header>
 
-      <FilterBar filter={filter} onChange={setFilter} />
+      <FilterBar filter={filter} onChange={setFilter} boardLabels={boardLabels} />
 
       <div className="flex-1 flex gap-3 p-4 overflow-x-auto">
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
@@ -319,7 +321,9 @@ export default function BoardPage() {
           boardId={boardId}
           columns={columns}
           boards={boards}
+          boardLabels={boardLabels}
           currentUserId={user?.id ?? 0}
+          onLabelsChanged={setBoardLabels}
           canEdit={canEdit && !showArchived}
           onClose={() => setEditingCard(null)}
           onSave={async (data) => {
