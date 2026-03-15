@@ -8,6 +8,8 @@ interface AppState {
   columns: Column[]
   cards: Card[]
   boardLabels: BoardLabel[]
+  labelsExpanded: boolean
+  toggleLabelsExpanded: () => void
   setUser: (u: User | null) => void
   setBoards: (b: Board[]) => void
   setCurrentBoard: (b: Board | null) => void
@@ -27,6 +29,8 @@ export const useStore = create<AppState>((set) => ({
   columns: [],
   cards: [],
   boardLabels: [],
+  labelsExpanded: false,
+  toggleLabelsExpanded: () => set((s) => ({ labelsExpanded: !s.labelsExpanded })),
   setUser: (user) => set({ user }),
   setBoards: (boards) => set({ boards }),
   setCurrentBoard: (currentBoard) => set({ currentBoard }),

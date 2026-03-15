@@ -13,6 +13,8 @@ interface Props {
 
 export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete }: Props) {
   const boardLabels = useStore((s) => s.boardLabels)
+  const labelsExpanded = useStore((s) => s.labelsExpanded)
+  const toggleLabelsExpanded = useStore((s) => s.toggleLabelsExpanded)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: 'card' },
@@ -34,7 +36,14 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
         {cardLabels.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {cardLabels.map((l) => (
-              <span key={l.id} className={`${l.color} h-1.5 rounded-full px-1 min-w-[2rem]`} title={l.name} />
+              <button
+                key={l.id}
+                onClick={(e) => { e.stopPropagation(); toggleLabelsExpanded() }}
+                title={labelsExpanded ? 'Hide label names' : l.name || l.color}
+                className={`${l.color} rounded-full transition-all duration-150 cursor-pointer ${labelsExpanded ? 'h-5 px-2 text-xs font-medium text-white/90' : 'h-1.5 px-1 min-w-[2rem]'}`}
+              >
+                {labelsExpanded ? (l.name || '') : ''}
+              </button>
             ))}
           </div>
         )}
