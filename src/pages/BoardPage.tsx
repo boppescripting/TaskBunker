@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors,
@@ -32,6 +32,7 @@ export default function BoardPage() {
 
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [activeColId, setActiveColId] = useState<number | null>(null)
+  const dragOriginalColRef = useRef<number | null>(null)
   const [editingCard, setEditingCard] = useState<Card | null>(null)
   const [showMembers, setShowMembers] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
@@ -140,8 +141,12 @@ export default function BoardPage() {
   const onDragStart = ({ active }: DragStartEvent) => {
     const type = active.data.current?.type
     if (type === 'card') {
-      const card = cards.find((c) => c.id === active.id)
-      if (card) setActiveCard(card)
+      // Read fresh state — no stale closure risk
+      const card = useStore.getState().cards.find((c) => c.id === active.id)
+      if (card) {
+        setActiveCard(card)
+        dragOriginalColRef.current = card.column_id
+      }
     } else if (type === 'column') {
       setActiveColId(active.id as number)
     }
@@ -149,14 +154,16 @@ export default function BoardPage() {
 
   const onDragOver = ({ active, over }: DragOverEvent) => {
     if (!over || active.data.current?.type === 'column') return
-
     const activeId = active.id as number
     const overId = over.id as number
-    const draggingCard = cards.find((c) => c.id === activeId)
+
+    // Always read current store state to avoid stale column_id after previous onDragOver
+    const { cards: currentCards, columns: currentColumns } = useStore.getState()
+    const draggingCard = currentCards.find((c) => c.id === activeId)
     if (!draggingCard) return
 
-    const overCard = cards.find((c) => c.id === overId)
-    const overCol = columns.find((c) => c.id === overId)
+    const overCard = currentCards.find((c) => c.id === overId)
+    const overCol = currentColumns.find((c) => c.id === overId)
     const targetColId = overCard ? overCard.column_id : overCol?.id
     if (!targetColId || draggingCard.column_id === targetColId) return
 
@@ -171,46 +178,55 @@ export default function BoardPage() {
   const onDragEnd = async ({ active, over }: DragEndEvent) => {
     setActiveCard(null)
     setActiveColId(null)
-    if (!over) return
 
+    // Always read current store state — by this point onDragOver has already updated it
+    const { cards: currentCards, columns: currentColumns, currentBoard: currentBoardState } = useStore.getState()
+
+    if (!over) return
     const activeId = active.id as number
     const overId = over.id as number
     const type = active.data.current?.type
 
     if (type === 'column') {
-      if (activeId === overId) return
-      const colIds = currentBoard?.column_ids || []
+      if (activeId === overId || !currentBoardState) return
+      const colIds = currentBoardState.column_ids || []
       const oldIdx = colIds.indexOf(activeId)
       const newIdx = colIds.indexOf(overId)
       if (oldIdx === -1 || newIdx === -1) return
       const newIds = arrayMove(colIds, oldIdx, newIdx)
-      setCurrentBoard({ ...currentBoard!, column_ids: newIds })
+      setCurrentBoard({ ...currentBoardState, column_ids: newIds })
       await updateBoard(boardId, { column_ids: newIds })
       return
     }
 
     if (type === 'card') {
-      const draggingCard = cards.find((c) => c.id === activeId)
-      if (!draggingCard) return
-      const col = columns.find((c) => c.card_ids.includes(activeId))
-      if (!col) return
-      const overCard = cards.find((c) => c.id === overId)
+      const originalColId = dragOriginalColRef.current
+      dragOriginalColRef.current = null
 
-      if (overCard && overCard.column_id === draggingCard.column_id) {
-        // Reorder within same column
-        const oldIdx = col.card_ids.indexOf(activeId)
-        const newIdx = col.card_ids.indexOf(overId)
-        if (oldIdx !== newIdx) {
-          const newIds = arrayMove(col.card_ids, oldIdx, newIdx)
-          setColumns(columns.map((c) => c.id === col.id ? { ...col, card_ids: newIds } : c))
-          await updateColumn(boardId, col.id, { card_ids: newIds })
+      const draggingCard = currentCards.find((c) => c.id === activeId)
+      if (!draggingCard || !originalColId) return
+
+      const targetColId = draggingCard.column_id  // updated by onDragOver
+      const targetCol = currentColumns.find((c) => c.id === targetColId)
+      if (!targetCol) return
+
+      if (originalColId === targetColId) {
+        // Same-column reorder
+        const overCard = currentCards.find((c) => c.id === overId)
+        if (!overCard) return
+        const oldIdx = targetCol.card_ids.indexOf(activeId)
+        const newIdx = targetCol.card_ids.indexOf(overId)
+        if (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) {
+          const newIds = arrayMove(targetCol.card_ids, oldIdx, newIdx)
+          setColumns(currentColumns.map((c) => c.id === targetCol.id ? { ...c, card_ids: newIds } : c))
+          await updateColumn(boardId, targetCol.id, { card_ids: newIds })
         }
       } else {
-        // Cross-column drop — persist new column and both columns' order
-        await updateCard(boardId, activeId, { column_id: draggingCard.column_id })
-        for (const c of columns) {
-          await updateColumn(boardId, c.id, { card_ids: c.card_ids })
-        }
+        // Cross-column: save card's new column + only the two affected columns
+        const sourceCol = currentColumns.find((c) => c.id === originalColId)
+        await updateCard(boardId, activeId, { column_id: targetColId })
+        if (sourceCol) await updateColumn(boardId, sourceCol.id, { card_ids: sourceCol.card_ids })
+        await updateColumn(boardId, targetCol.id, { card_ids: targetCol.card_ids })
       }
     }
   }
