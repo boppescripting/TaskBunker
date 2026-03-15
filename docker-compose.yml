@@ -1,35 +1,15 @@
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: taskbunker
-      POSTGRES_USER: taskbunker
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taskbunker"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   app:
-    build: .
+    image: ghcr.io/boppescripting/taskbunker:latest
     restart: unless-stopped
     ports:
       - "${PORT:-3001}:3001"
     environment:
       NODE_ENV: production
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: taskbunker
-      POSTGRES_USER: taskbunker
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      LIBSQL_URL: file:/app/data/taskbunker.db
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
-    depends_on:
-      db:
-        condition: service_healthy
+    volumes:
+      - taskbunker_data:/app/data
 
 volumes:
-  postgres_data:
+  taskbunker_data:

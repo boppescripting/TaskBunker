@@ -1,64 +1,74 @@
-import { Pool } from 'pg'
+import { createClient } from '@libsql/client'
 
-export const pool = new Pool({
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: Number(process.env.POSTGRES_PORT) || 5432,
-  database: process.env.POSTGRES_DB || 'taskbunker',
-  user: process.env.POSTGRES_USER || 'taskbunker',
-  password: process.env.POSTGRES_PASSWORD || 'taskbunker'
+export const db = createClient({
+  url: process.env.LIBSQL_URL || 'file:./data/taskbunker.db'
 })
 
+export function parseBoard(row: Record<string, any>) {
+  return { ...row, column_ids: JSON.parse((row.column_ids as string) || '[]') }
+}
+
+export function parseColumn(row: Record<string, any>) {
+  return { ...row, card_ids: JSON.parse((row.card_ids as string) || '[]') }
+}
+
+export function parseChecklist(row: Record<string, any>) {
+  return { ...row, checked: Boolean(row.checked) }
+}
+
 export async function initDb() {
-  await pool.query(`
+  await db.executeMultiple(`
+    PRAGMA journal_mode=WAL;
+
     CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL UNIQUE,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS boards (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       color TEXT NOT NULL DEFAULT 'bg-sky-600',
-      owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      column_ids INTEGER[] NOT NULL DEFAULT '{}',
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      owner_id INTEGER NOT NULL,
+      column_ids TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS board_members (
-      board_id INTEGER REFERENCES boards(id) ON DELETE CASCADE,
-      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      board_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
       role TEXT NOT NULL DEFAULT 'member',
       PRIMARY KEY (board_id, user_id)
     );
 
     CREATE TABLE IF NOT EXISTS columns (
-      id SERIAL PRIMARY KEY,
-      board_id INTEGER NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      board_id INTEGER NOT NULL,
       title TEXT NOT NULL,
-      card_ids INTEGER[] NOT NULL DEFAULT '{}',
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      card_ids TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS cards (
-      id SERIAL PRIMARY KEY,
-      board_id INTEGER NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
-      column_id INTEGER NOT NULL REFERENCES columns(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      board_id INTEGER NOT NULL,
+      column_id INTEGER NOT NULL,
       title TEXT NOT NULL,
       description TEXT NOT NULL DEFAULT '',
-      due_date TIMESTAMPTZ,
+      due_date TEXT,
       label_color TEXT,
       position INTEGER NOT NULL DEFAULT 0,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS checklist_items (
-      id SERIAL PRIMARY KEY,
-      card_id INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      card_id INTEGER NOT NULL,
       text TEXT NOT NULL,
-      checked BOOLEAN NOT NULL DEFAULT FALSE,
+      checked INTEGER NOT NULL DEFAULT 0,
       position INTEGER NOT NULL DEFAULT 0
     );
   `)

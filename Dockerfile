@@ -22,8 +22,10 @@ WORKDIR /app
 COPY --from=server-builder /app/server/dist ./dist
 COPY --from=server-builder /app/server/node_modules ./node_modules
 
-# Frontend static files — served from /app/frontend (__dirname/../frontend)
+# Frontend static files
 COPY --from=frontend-builder /app/dist ./frontend
+
+RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
 EXPOSE 3001
