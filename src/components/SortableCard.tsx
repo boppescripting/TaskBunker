@@ -60,7 +60,7 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete,
           </div>
           <button
             onClick={(e) => { e.stopPropagation(); onToggleComplete() }}
-            className={`mt-0.5 shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${card.completed ? 'bg-emerald-500 border-emerald-500 opacity-100' : 'border-gray-300 opacity-0 group-hover:opacity-100 hover:border-emerald-400'}`}
+            className={`mt-0.5 shrink-0 w-4 h-4 rounded-full border-2 items-center justify-center transition-colors ${card.completed ? 'flex bg-emerald-500 border-emerald-500' : 'hidden group-hover:flex border-gray-300 hover:border-emerald-400'}`}
             title={card.completed ? 'Mark incomplete' : 'Mark complete'}
           >
             {card.completed && (
