@@ -27,7 +27,7 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
   const cardLabels = boardLabels.filter((l) => card.labels?.includes(String(l.id)))
 
   return (
-    <div ref={setNodeRef} style={style} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group select-none">
+    <div ref={setNodeRef} style={style} className="bg-white/85 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group select-none">
       {card.cover_color && <div className={`${card.cover_color} h-9 w-full`} />}
 
       <div className="p-3">
