@@ -239,19 +239,52 @@ export default function BoardPage() {
 
   return (
     <div className={`flex flex-col min-h-screen ${currentBoard?.color ?? 'bg-sky-700'}`}>
-      <header className="flex items-center gap-3 px-4 py-2 bg-black/20 shrink-0">
-        <button onClick={() => nav('/')} className="text-white/80 hover:text-white text-sm">← Boards</button>
-        <h1 className="text-white font-bold text-lg flex-1">{currentBoard?.title}</h1>
-        <button
-          onClick={() => setShowArchived((v) => !v)}
-          className={`text-sm px-2 py-1 rounded transition ${showArchived ? 'bg-white/30 text-white' : 'text-white/70 hover:text-white'}`}
-        >
-          {showArchived ? 'Hide Archived' : 'Archived'}
-        </button>
-        <button onClick={() => setShowSettings(true)} className="text-white/80 hover:text-white text-sm">Settings</button>
-      </header>
+      <header className="shrink-0 flex flex-col">
+        {/* Main toolbar */}
+        <div className="flex items-center gap-2 px-4 h-13 py-2 bg-black/25 backdrop-blur-sm border-b border-white/10">
+          {/* Back */}
+          <button
+            onClick={() => nav('/')}
+            className="flex items-center gap-1.5 text-white/75 hover:text-white text-sm font-medium transition shrink-0"
+          >
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="hidden sm:inline">Boards</span>
+          </button>
 
-      <FilterBar filter={filter} onChange={setFilter} boardLabels={boardLabels} />
+          <div className="w-px h-5 bg-white/20 mx-0.5 shrink-0" />
+
+          {/* Board title */}
+          <h1 className="text-white font-bold text-base flex-1 truncate">{currentBoard?.title}</h1>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${showArchived ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2L19 8m-9 4v4m4-4v4" />
+              </svg>
+              <span className="hidden sm:inline">{showArchived ? 'Hide archived' : 'Archived'}</span>
+            </button>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="hidden sm:inline">Settings</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filter bar */}
+        <FilterBar filter={filter} onChange={setFilter} boardLabels={boardLabels} />
+      </header>
 
       <div className="flex-1 flex gap-3 p-4 overflow-x-auto">
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
@@ -291,25 +324,25 @@ export default function BoardPage() {
 
         {canEdit && !showArchived && (
           addingCol ? (
-            <form onSubmit={handleAddColumn} className="bg-white/20 rounded-xl p-3 w-64 shrink-0 flex flex-col gap-2 h-fit">
+            <form onSubmit={handleAddColumn} className="bg-black/20 backdrop-blur-sm rounded-xl p-3 w-64 shrink-0 flex flex-col gap-2 h-fit ring-1 ring-white/10">
               <input
                 autoFocus
-                className="rounded px-2 py-1 text-sm bg-white/90 focus:outline-none"
-                placeholder="Column title"
+                className="rounded-lg px-2.5 py-1.5 text-sm bg-white/15 text-white placeholder-white/40 focus:outline-none focus:bg-white/20 border border-white/20"
+                placeholder="Column title…"
                 value={newColTitle}
                 onChange={(e) => setNewColTitle(e.target.value)}
               />
               <div className="flex gap-2">
-                <button className="bg-white text-sky-700 text-sm rounded px-2 py-1 font-medium">Add</button>
-                <button type="button" onClick={() => setAddingCol(false)} className="text-white/80 text-sm">Cancel</button>
+                <button className="bg-white text-sky-700 text-sm rounded-lg px-3 py-1 font-semibold hover:bg-white/90 transition">Add</button>
+                <button type="button" onClick={() => setAddingCol(false)} className="text-white/60 text-sm hover:text-white transition">Cancel</button>
               </div>
             </form>
           ) : (
             <button
               onClick={() => setAddingCol(true)}
-              className="bg-white/20 hover:bg-white/30 text-white rounded-xl px-4 py-3 text-sm font-medium w-64 shrink-0 h-fit transition"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white/80 hover:text-white rounded-xl px-4 py-3 text-sm font-medium w-64 shrink-0 h-fit transition ring-1 ring-white/10 hover:ring-white/20"
             >
-              + Add Column
+              + Add column
             </button>
           )
         )}
