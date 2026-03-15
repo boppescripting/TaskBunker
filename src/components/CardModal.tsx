@@ -37,6 +37,7 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
   const [labels, setLabels] = useState<string[]>(card.labels || [])
   const [coverColor, setCoverColor] = useState(card.cover_color || '')
   const [checklist, setChecklist] = useState<ChecklistItem[]>([])
+  const [showChecklist, setShowChecklist] = useState(false)
   const [newItem, setNewItem] = useState('')
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
@@ -56,7 +57,7 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
   const [copyTitle, setCopyTitle] = useState(card.title)
 
   useEffect(() => {
-    getChecklist(boardId, card.id).then((r) => setChecklist(r.data))
+    getChecklist(boardId, card.id).then((r) => { setChecklist(r.data); if (r.data.length > 0) setShowChecklist(true) })
     getComments(boardId, card.id).then((r) => setComments(r.data))
     getAssignees(boardId, card.id).then((r) => setAssignees(r.data))
     getBoardMembers(boardId).then((r) => setMembers(r.data))
@@ -229,39 +230,51 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
                   </div>
 
                   {/* Checklist */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-gray-500 font-medium">Checklist</p>
-                      {checklist.length > 0 && <span className="text-xs text-gray-400">{done}/{checklist.length}</span>}
-                    </div>
-                    {checklist.length > 0 && (
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 mb-3">
-                        <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{ width: `${(done / checklist.length) * 100}%` }} />
+                  {showChecklist ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs text-gray-500 font-medium">Checklist</p>
+                        {checklist.length > 0 && <span className="text-xs text-gray-400">{done}/{checklist.length}</span>}
                       </div>
-                    )}
-                    <div className="space-y-1.5">
-                      {checklist.map((item) => (
-                        <div key={item.id} className="flex items-center gap-2 group">
-                          <input type="checkbox" checked={item.checked} onChange={() => toggleItem(item)} disabled={!canEdit} className="rounded" />
-                          <span className={`text-sm flex-1 ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}>{item.text}</span>
-                          {canEdit && (
-                            <button onClick={() => removeItem(item)} className="text-gray-300 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100">✕</button>
-                          )}
+                      {checklist.length > 0 && (
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mb-3">
+                          <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{ width: `${(done / checklist.length) * 100}%` }} />
                         </div>
-                      ))}
+                      )}
+                      <div className="space-y-1.5">
+                        {checklist.map((item) => (
+                          <div key={item.id} className="flex items-center gap-2 group">
+                            <input type="checkbox" checked={item.checked} onChange={() => toggleItem(item)} disabled={!canEdit} className="rounded" />
+                            <span className={`text-sm flex-1 ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}>{item.text}</span>
+                            {canEdit && (
+                              <button onClick={() => removeItem(item)} className="text-gray-300 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100">✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {canEdit && (
+                        <form onSubmit={addItem} className="flex gap-2 mt-2">
+                          <input
+                            className="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300"
+                            placeholder="Add item…"
+                            value={newItem}
+                            onChange={(e) => setNewItem(e.target.value)}
+                          />
+                          <button className="bg-sky-600 text-white text-xs rounded px-2 py-1 hover:bg-sky-700">Add</button>
+                        </form>
+                      )}
                     </div>
-                    {canEdit && (
-                      <form onSubmit={addItem} className="flex gap-2 mt-2">
-                        <input
-                          className="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300"
-                          placeholder="Add item…"
-                          value={newItem}
-                          onChange={(e) => setNewItem(e.target.value)}
-                        />
-                        <button className="bg-sky-600 text-white text-xs rounded px-2 py-1 hover:bg-sky-700">Add</button>
-                      </form>
-                    )}
-                  </div>
+                  ) : canEdit && (
+                    <button
+                      onClick={() => setShowChecklist(true)}
+                      className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition flex items-center gap-1.5 w-full"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                      Add checklist
+                    </button>
+                  )}
                 </div>
               )}
 
