@@ -44,7 +44,7 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
           <div
             {...attributes}
             {...listeners}
-            className="mt-0.5 text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing shrink-0 touch-none leading-none"
+            className="mt-0.5 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing shrink-0 touch-none leading-none transition-colors"
           >
             ⠿
           </div>
