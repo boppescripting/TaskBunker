@@ -150,7 +150,7 @@ export default function BoardPage() {
         dragOriginalColRef.current = card.column_id
       }
     } else if (type === 'column') {
-      setActiveColId(active.id as number)
+      setActiveColId(-(active.id as number)) // convert negative sortable id back to positive column id
     }
   }
 
@@ -165,8 +165,9 @@ export default function BoardPage() {
     if (!draggingCard) return
 
     const overCard = currentCards.find((c) => c.id === overId)
-    const overCol = currentColumns.find((c) => c.id === overId)
-    const targetColId = overCard ? overCard.column_id : overCol?.id
+    // overId may be a negative column sortable id or positive column droppable id
+    const overCol = currentColumns.find((c) => c.id === Math.abs(overId))
+    const targetColId = overCard ? overCard.column_id : (overCol && !overCard ? overCol.id : undefined)
     if (!targetColId || draggingCard.column_id === targetColId) return
 
     setCards((prev) => prev.map((c) => c.id === activeId ? { ...c, column_id: targetColId } : c))
@@ -190,10 +191,13 @@ export default function BoardPage() {
     const type = active.data.current?.type
 
     if (type === 'column') {
-      if (activeId === overId || !currentBoardState) return
+      // active.id and over.id are negative (-column.id); convert back to real ids
+      const activeColId = -activeId
+      const overColId = -overId
+      if (activeColId === overColId || !currentBoardState) return
       const colIds = currentBoardState.column_ids || []
-      const oldIdx = colIds.indexOf(activeId)
-      const newIdx = colIds.indexOf(overId)
+      const oldIdx = colIds.indexOf(activeColId)
+      const newIdx = colIds.indexOf(overColId)
       if (oldIdx === -1 || newIdx === -1) return
       const newIds = arrayMove(colIds, oldIdx, newIdx)
       setCurrentBoard({ ...currentBoardState, column_ids: newIds })
@@ -288,7 +292,7 @@ export default function BoardPage() {
 
       <div className="flex-1 flex gap-3 p-4 overflow-x-auto">
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
-          <SortableContext items={orderedColumns.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
+          <SortableContext items={orderedColumns.map((c) => -c.id)} strategy={horizontalListSortingStrategy}>
             {orderedColumns.map((col) => (
               <KanbanColumn
                 key={col.id}

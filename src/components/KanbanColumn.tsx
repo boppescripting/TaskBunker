@@ -34,7 +34,7 @@ export default function KanbanColumn({ column, cards, filteredCardIds, canEdit, 
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: column.id, data: { type: 'column' } })
+  } = useSortable({ id: -column.id, data: { type: 'column' } })
 
   // Droppable for cards dropped into this column
   const { setNodeRef: setDropRef } = useDroppable({ id: column.id })
