@@ -24,7 +24,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-sky-700">
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-sm">
         <h1 className="text-2xl font-bold text-sky-700 mb-6 text-center">TaskBunker</h1>
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}

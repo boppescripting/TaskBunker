@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply bg-sky-700 min-h-screen;
+  @apply min-h-screen;
 }
 
 /* Custom scrollbar for columns */

@@ -238,7 +238,7 @@ export default function BoardPage() {
     : columns
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className={`flex flex-col min-h-screen ${currentBoard?.color ?? 'bg-sky-700'}`}>
       <header className="flex items-center gap-3 px-4 py-2 bg-black/20 shrink-0">
         <button onClick={() => nav('/')} className="text-white/80 hover:text-white text-sm">← Boards</button>
         <h1 className="text-white font-bold text-lg flex-1">{currentBoard?.title}</h1>

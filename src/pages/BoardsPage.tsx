@@ -42,7 +42,7 @@ export default function BoardsPage() {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 bg-sky-700">
       <header className="flex items-center justify-between mb-8">
         <h1 className="text-white text-2xl font-bold">TaskBunker</h1>
         <div className="flex items-center gap-3">
