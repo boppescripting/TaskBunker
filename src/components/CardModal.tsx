@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+
+const mdComponents = {
+  a: ({ href, children }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-600 underline hover:text-sky-800">
+      {children}
+    </a>
+  ),
+}
 import type { Card, ChecklistItem, Comment, Assignee, ActivityEntry, Column, Board, BoardLabel } from '../types'
 import { LABEL_COLORS, COVER_COLORS } from '../types'
 import {
@@ -204,7 +212,7 @@ const [saving, setSaving] = useState(false)
                         className="prose prose-sm max-w-none text-gray-700 cursor-pointer hover:bg-gray-50 rounded p-2 -m-2"
                         onClick={() => canEdit && setEditingDesc(true)}
                       >
-                        <ReactMarkdown>{description}</ReactMarkdown>
+                        <ReactMarkdown components={mdComponents}>{description}</ReactMarkdown>
                       </div>
                     )}
                   </div>
@@ -285,7 +293,7 @@ const [saving, setSaving] = useState(false)
                           )}
                         </div>
                         <div className="prose prose-sm max-w-none bg-gray-50 rounded-lg px-3 py-2 text-gray-700">
-                          <ReactMarkdown>{c.text}</ReactMarkdown>
+                          <ReactMarkdown components={mdComponents}>{c.text}</ReactMarkdown>
                         </div>
                       </div>
                     ))}
