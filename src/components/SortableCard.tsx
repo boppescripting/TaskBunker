@@ -1,31 +1,26 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Card } from '../types'
-
-const LABEL_COLORS: Record<string, string> = {
-  red: 'bg-red-400',
-  orange: 'bg-orange-400',
-  yellow: 'bg-yellow-400',
-  green: 'bg-emerald-400',
-  blue: 'bg-sky-400',
-  purple: 'bg-violet-400'
-}
+import { LABELS } from '../types'
 
 interface Props {
   card: Card
   canEdit: boolean
+  dimmed: boolean
   onClick: () => void
   onDelete: () => void
 }
 
-export default function SortableCard({ card, canEdit, onClick, onDelete }: Props) {
+export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: card.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1
+    opacity: isDragging ? 0.4 : dimmed ? 0.35 : 1
   }
+
+  const cardLabels = LABELS.filter((l) => card.labels?.includes(l.id))
 
   return (
     <div
@@ -33,27 +28,41 @@ export default function SortableCard({ card, canEdit, onClick, onDelete }: Props
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white rounded-lg shadow-sm p-3 cursor-grab active:cursor-grabbing group"
+      className="bg-white rounded-lg shadow-sm overflow-hidden cursor-grab active:cursor-grabbing group"
     >
-      {card.label_color && (
-        <div className={`${LABEL_COLORS[card.label_color] || 'bg-gray-400'} h-1.5 rounded-full mb-2 w-12`} />
+      {card.cover_color && (
+        <div className={`${card.cover_color} h-8 w-full`} />
       )}
-      <p className="text-sm text-gray-800 leading-snug" onClick={onClick}>{card.title}</p>
-      <div className="flex items-center justify-between mt-2">
-        {card.due_date && (
-          <span className="text-xs text-gray-400">{new Date(card.due_date).toLocaleDateString()}</span>
+      <div className="p-3">
+        {cardLabels.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {cardLabels.map((l) => (
+              <span key={l.id} className={`${l.color} h-2 w-8 rounded-full`} />
+            ))}
+          </div>
         )}
-        <div className="flex gap-2 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => { e.stopPropagation(); onClick() }}
-            className="text-gray-400 hover:text-sky-600 text-xs"
-          >Edit</button>
-          {canEdit && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete() }}
-              className="text-gray-400 hover:text-red-500 text-xs"
-            >✕</button>
-          )}
+        <p className="text-sm text-gray-800 leading-snug" onClick={onClick}>{card.title}</p>
+        <div className="flex items-center justify-between mt-2 gap-1">
+          <div className="flex items-center gap-2">
+            {card.due_date && (() => {
+              const due = new Date(card.due_date)
+              const now = new Date()
+              const overdue = due < now
+              const soon = due < new Date(now.getTime() + 2 * 24 * 3600 * 1000)
+              return (
+                <span className={`text-xs px-1.5 py-0.5 rounded ${overdue ? 'bg-red-100 text-red-600' : soon ? 'bg-yellow-100 text-yellow-700' : 'text-gray-400'}`}>
+                  {due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </span>
+              )
+            })()}
+            {card.description && <span className="text-gray-300 text-xs">≡</span>}
+          </div>
+          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={(e) => { e.stopPropagation(); onClick() }} className="text-gray-400 hover:text-sky-600 text-xs">Edit</button>
+            {canEdit && (
+              <button onClick={(e) => { e.stopPropagation(); onDelete() }} className="text-gray-400 hover:text-red-500 text-xs">✕</button>
+            )}
+          </div>
         </div>
       </div>
     </div>

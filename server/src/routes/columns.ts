@@ -28,7 +28,7 @@ router.post('/', async (req: AuthRequest, res) => {
     args: [boardId, title.trim()]
   })
   const id = Number(r.lastInsertRowid)
-  res.json({ id, board_id: boardId, title: title.trim(), card_ids: [] })
+  res.json({ id, board_id: boardId, title: title.trim(), card_ids: [], wip_limit: null })
 })
 
 router.patch('/:colId', async (req: AuthRequest, res) => {
@@ -36,11 +36,12 @@ router.patch('/:colId', async (req: AuthRequest, res) => {
   const colId = Number(req.params.colId)
   const role = await getRole(req.userId!, boardId)
   if (!role || role === 'viewer') return res.status(403).json({ error: 'Forbidden' })
-  const { title, card_ids } = req.body
+  const { title, card_ids, wip_limit } = req.body
   const fields: string[] = []
   const vals: any[] = []
   if (title !== undefined) { fields.push('title = ?'); vals.push(title) }
   if (card_ids !== undefined) { fields.push('card_ids = ?'); vals.push(JSON.stringify(card_ids)) }
+  if (wip_limit !== undefined) { fields.push('wip_limit = ?'); vals.push(wip_limit === '' ? null : wip_limit) }
   if (!fields.length) return res.status(400).json({ error: 'Nothing to update' })
   vals.push(colId, boardId)
   await db.execute({ sql: `UPDATE columns SET ${fields.join(', ')} WHERE id = ? AND board_id = ?`, args: vals })
@@ -54,6 +55,8 @@ router.delete('/:colId', async (req: AuthRequest, res) => {
   const role = await getRole(req.userId!, boardId)
   if (!role || role === 'viewer' || role === 'member') return res.status(403).json({ error: 'Forbidden' })
   await db.execute({ sql: 'DELETE FROM checklist_items WHERE card_id IN (SELECT id FROM cards WHERE column_id = ?)', args: [colId] })
+  await db.execute({ sql: 'DELETE FROM card_comments WHERE card_id IN (SELECT id FROM cards WHERE column_id = ?)', args: [colId] })
+  await db.execute({ sql: 'DELETE FROM card_assignees WHERE card_id IN (SELECT id FROM cards WHERE column_id = ?)', args: [colId] })
   await db.execute({ sql: 'DELETE FROM cards WHERE column_id = ? AND board_id = ?', args: [colId, boardId] })
   await db.execute({ sql: 'DELETE FROM columns WHERE id = ? AND board_id = ?', args: [colId, boardId] })
   res.json({ ok: true })
