@@ -8,6 +8,7 @@ const mdComponents = {
     </a>
   ),
 }
+import { useStore } from '../store'
 import type { Card, ChecklistItem, Comment, Assignee, ActivityEntry, Column, Board, BoardLabel } from '../types'
 import { LABEL_COLORS, COVER_COLORS } from '../types'
 import {
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export default function CardModal({ card, boardId, columns, boards, boardLabels: initialBoardLabels, currentUserId, canEdit, onClose, onSave, onDelete, onArchive, onCardMoved, onCardCopied, onLabelsChanged }: Props) {
+  const updateCard = useStore((s) => s.updateCard)
   const [title, setTitle] = useState(card.title)
   const [description, setDescription] = useState(card.description || '')
   const [editingDesc, setEditingDesc] = useState(false)
@@ -114,27 +116,38 @@ const [saving, setSaving] = useState(false)
     setEditingLabelId(null)
   }
 
+  const syncChecklistCounts = (updated: ChecklistItem[]) => {
+    updateCard({ ...card, checklist_total: updated.length, checklist_done: updated.filter((i) => i.checked).length })
+  }
+
   const addItem = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newItem.trim()) return
     const r = await addChecklistItem(boardId, card.id, newItem.trim())
-    setChecklist([...checklist, r.data])
+    const updated = [...checklist, r.data]
+    setChecklist(updated)
+    syncChecklistCounts(updated)
     setNewItem('')
   }
 
   const toggleItem = async (item: ChecklistItem) => {
     await updateChecklistItem(boardId, card.id, item.id, { checked: !item.checked })
-    setChecklist(checklist.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)))
+    const updated = checklist.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i))
+    setChecklist(updated)
+    syncChecklistCounts(updated)
   }
 
   const removeItem = async (item: ChecklistItem) => {
     await deleteChecklistItem(boardId, card.id, item.id)
-    setChecklist(checklist.filter((i) => i.id !== item.id))
+    const updated = checklist.filter((i) => i.id !== item.id)
+    setChecklist(updated)
+    syncChecklistCounts(updated)
   }
 
   const removeChecklist = async () => {
     await Promise.all(checklist.map((i) => deleteChecklistItem(boardId, card.id, i.id)))
     setChecklist([])
+    syncChecklistCounts([])
     setShowChecklist(false)
   }
 

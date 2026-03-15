@@ -76,6 +76,12 @@ export default function SortableCard({ card, canEdit, dimmed, onClick, onDelete 
                 </span>
               )
             })()}
+            {card.checklist_total > 0 && (
+              <span className={`text-xs px-1.5 py-0.5 rounded-md flex items-center gap-0.5 ${card.checklist_done === card.checklist_total ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                {card.checklist_done}/{card.checklist_total}
+              </span>
+            )}
             {card.description && (
               <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h12M4 18h8" />

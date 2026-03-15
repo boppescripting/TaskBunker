@@ -12,7 +12,14 @@ router.get('/', async (req: AuthRequest, res) => {
   if (!role) return res.status(403).json({ error: 'Forbidden' })
   const showArchived = req.query.archived === 'true'
   const r = await db.execute({
-    sql: `SELECT * FROM cards WHERE board_id = ? AND archived = ? ORDER BY position, created_at`,
+    sql: `SELECT c.*,
+            COUNT(ci.id) AS checklist_total,
+            SUM(CASE WHEN ci.checked = 1 THEN 1 ELSE 0 END) AS checklist_done
+          FROM cards c
+          LEFT JOIN checklist_items ci ON ci.card_id = c.id
+          WHERE c.board_id = ? AND c.archived = ?
+          GROUP BY c.id
+          ORDER BY c.position, c.created_at`,
     args: [boardId, showArchived ? 1 : 0]
   })
   res.json(r.rows.map(parseCard))

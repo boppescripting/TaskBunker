@@ -39,6 +39,8 @@ export interface Card {
   cover_color: string | null
   archived: boolean
   position: number
+  checklist_total: number
+  checklist_done: number
 }
 
 export interface BoardLabel {

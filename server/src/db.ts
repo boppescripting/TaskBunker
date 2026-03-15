@@ -13,7 +13,13 @@ export function parseColumn(row: Record<string, any>) {
 }
 
 export function parseCard(row: Record<string, any>) {
-  return { ...row, labels: JSON.parse((row.labels as string) || '[]'), archived: Boolean(row.archived) }
+  return {
+    ...row,
+    labels: JSON.parse((row.labels as string) || '[]'),
+    archived: Boolean(row.archived),
+    checklist_total: Number(row.checklist_total ?? 0),
+    checklist_done: Number(row.checklist_done ?? 0),
+  }
 }
 
 export function parseChecklist(row: Record<string, any>) {
