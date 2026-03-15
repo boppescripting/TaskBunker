@@ -10,7 +10,6 @@ import {
   updateBoardLabel, createBoardLabel, deleteBoardLabel,
 } from '../api'
 
-type Tab = 'details' | 'comments' | 'activity'
 
 interface Props {
   card: Card
@@ -48,8 +47,7 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
   const [editingLabelId, setEditingLabelId] = useState<number | null>(null)
   const [editingLabelName, setEditingLabelName] = useState('')
   const [editingLabelColor, setEditingLabelColor] = useState('')
-  const [tab, setTab] = useState<Tab>('details')
-  const [saving, setSaving] = useState(false)
+const [saving, setSaving] = useState(false)
   const [showMove, setShowMove] = useState(false)
   const [showCopy, setShowCopy] = useState(false)
   const [moveColId, setMoveColId] = useState(card.column_id)
@@ -61,11 +59,8 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
     getComments(boardId, card.id).then((r) => setComments(r.data))
     getAssignees(boardId, card.id).then((r) => setAssignees(r.data))
     getBoardMembers(boardId).then((r) => setMembers(r.data))
+    getCardActivity(boardId, card.id).then((r) => setActivity(r.data))
   }, [card.id])
-
-  useEffect(() => {
-    if (tab === 'activity') getCardActivity(boardId, card.id).then((r) => setActivity(r.data))
-  }, [tab])
 
   const save = async () => {
     setSaving(true)
@@ -189,22 +184,7 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
           <div className="flex gap-6">
             {/* Main content */}
             <div className="flex-1 space-y-5 min-w-0">
-              {/* Tabs */}
-              <div className="flex gap-1 border-b">
-                {(['details', 'comments', 'activity'] as Tab[]).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTab(t)}
-                    className={`px-3 py-1.5 text-sm capitalize border-b-2 -mb-px transition ${tab === t ? 'border-sky-500 text-sky-700 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                  >
-                    {t}
-                    {t === 'comments' && comments.length > 0 && <span className="ml-1 text-xs text-gray-400">({comments.length})</span>}
-                  </button>
-                ))}
-              </div>
-
-              {tab === 'details' && (
-                <div className="space-y-5">
+              <div className="space-y-5">
                   {/* Description */}
                   <div>
                     <p className="text-xs text-gray-500 font-medium mb-1">Description</p>
@@ -275,25 +255,13 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
                       Add checklist
                     </button>
                   )}
-                </div>
-              )}
+                {/* Comments & Activity */}
+                <div className="border-t pt-4 space-y-3">
+                  <p className="text-xs text-gray-500 font-medium">
+                    Comments & Activity
+                    {comments.length > 0 && <span className="ml-1 text-gray-400">({comments.length})</span>}
+                  </p>
 
-              {tab === 'comments' && (
-                <div className="space-y-3">
-                  {comments.map((c) => (
-                    <div key={c.id} className="group">
-                      <div className="flex items-baseline gap-2 mb-0.5">
-                        <span className="text-sm font-medium text-gray-800">{c.username}</span>
-                        <span className="text-xs text-gray-400">{new Date(c.created_at).toLocaleString()}</span>
-                        {(c.user_id === currentUserId) && (
-                          <button onClick={() => deleteCommentHandler(c.id)} className="text-xs text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 ml-auto">Delete</button>
-                        )}
-                      </div>
-                      <div className="prose prose-sm max-w-none bg-gray-50 rounded-lg px-3 py-2 text-gray-700">
-                        <ReactMarkdown>{c.text}</ReactMarkdown>
-                      </div>
-                    </div>
-                  ))}
                   {canEdit && (
                     <form onSubmit={submitComment} className="space-y-1">
                       <textarea
@@ -305,21 +273,35 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
                       <button className="bg-sky-600 text-white text-xs rounded px-3 py-1 hover:bg-sky-700">Post</button>
                     </form>
                   )}
-                </div>
-              )}
 
-              {tab === 'activity' && (
-                <div className="space-y-2">
-                  {activity.length === 0 && <p className="text-sm text-gray-400">No activity yet.</p>}
-                  {activity.map((a) => (
-                    <div key={a.id} className="flex gap-2 text-sm">
-                      <span className="font-medium text-gray-700">{a.username}</span>
-                      <span className="text-gray-500">{a.action}</span>
-                      <span className="text-gray-400 text-xs ml-auto">{new Date(a.created_at).toLocaleString()}</span>
-                    </div>
-                  ))}
+                  <div className="space-y-3">
+                    {comments.map((c) => (
+                      <div key={`comment-${c.id}`} className="group">
+                        <div className="flex items-baseline gap-2 mb-0.5">
+                          <span className="text-sm font-medium text-gray-800">{c.username}</span>
+                          <span className="text-xs text-gray-400">{new Date(c.created_at).toLocaleString()}</span>
+                          {c.user_id === currentUserId && (
+                            <button onClick={() => deleteCommentHandler(c.id)} className="text-xs text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 ml-auto">Delete</button>
+                          )}
+                        </div>
+                        <div className="prose prose-sm max-w-none bg-gray-50 rounded-lg px-3 py-2 text-gray-700">
+                          <ReactMarkdown>{c.text}</ReactMarkdown>
+                        </div>
+                      </div>
+                    ))}
+                    {activity.map((a) => (
+                      <div key={`activity-${a.id}`} className="flex gap-2 text-xs text-gray-500">
+                        <span className="font-medium text-gray-600">{a.username}</span>
+                        <span>{a.action}</span>
+                        <span className="text-gray-400 ml-auto shrink-0">{new Date(a.created_at).toLocaleString()}</span>
+                      </div>
+                    ))}
+                    {comments.length === 0 && activity.length === 0 && (
+                      <p className="text-xs text-gray-400">No activity yet.</p>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Sidebar */}
