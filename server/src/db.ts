@@ -38,6 +38,7 @@ export async function initDb() {
       color TEXT NOT NULL DEFAULT 'bg-sky-600',
       owner_id INTEGER NOT NULL,
       column_ids TEXT NOT NULL DEFAULT '[]',
+      visibility TEXT NOT NULL DEFAULT 'private',
       created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -128,6 +129,12 @@ export async function initDb() {
   const colColNames = colCols.rows.map((r: any) => r.name)
   if (!colColNames.includes('wip_limit')) {
     await db.execute("ALTER TABLE columns ADD COLUMN wip_limit INTEGER")
+  }
+
+  const boardCols = await db.execute("PRAGMA table_info(boards)")
+  const boardColNames = boardCols.rows.map((r: any) => r.name)
+  if (!boardColNames.includes('visibility')) {
+    await db.execute("ALTER TABLE boards ADD COLUMN visibility TEXT NOT NULL DEFAULT 'private'")
   }
 
   console.log('Database initialized')

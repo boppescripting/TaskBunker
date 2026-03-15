@@ -41,12 +41,13 @@ router.patch('/:id', async (req: AuthRequest, res) => {
   const boardId = Number(req.params.id)
   const role = await getRole(req.userId!, boardId)
   if (!role || role === 'viewer' || role === 'member') return res.status(403).json({ error: 'Forbidden' })
-  const { title, color, column_ids } = req.body
+  const { title, color, column_ids, visibility } = req.body
   const fields: string[] = []
   const vals: any[] = []
   if (title !== undefined) { fields.push('title = ?'); vals.push(title) }
   if (color !== undefined) { fields.push('color = ?'); vals.push(color) }
   if (column_ids !== undefined) { fields.push('column_ids = ?'); vals.push(JSON.stringify(column_ids)) }
+  if (visibility !== undefined) { fields.push('visibility = ?'); vals.push(visibility) }
   if (!fields.length) return res.status(400).json({ error: 'Nothing to update' })
   vals.push(boardId)
   await db.execute({ sql: `UPDATE boards SET ${fields.join(', ')} WHERE id = ?`, args: vals })
@@ -106,6 +107,20 @@ router.delete('/:id/members/:userId', async (req: AuthRequest, res) => {
     args: [boardId, req.params.userId]
   })
   res.json({ ok: true })
+})
+
+router.get('/:id/activity', async (req: AuthRequest, res) => {
+  const boardId = Number(req.params.id)
+  const role = await getRole(req.userId!, boardId)
+  if (!role) return res.status(403).json({ error: 'Forbidden' })
+  const r = await db.execute({
+    sql: `SELECT al.*, u.username FROM activity_log al
+          JOIN users u ON u.id = al.user_id
+          WHERE al.board_id = ?
+          ORDER BY al.created_at DESC LIMIT 100`,
+    args: [boardId]
+  })
+  res.json(r.rows)
 })
 
 export async function getRole(userId: number, boardId: number) {

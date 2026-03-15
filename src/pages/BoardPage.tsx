@@ -15,7 +15,7 @@ import {
 import type { Column, Card } from '../types'
 import KanbanColumn from '../components/KanbanColumn'
 import CardModal from '../components/CardModal'
-import MembersModal from '../components/MembersModal'
+import BoardSettingsPanel from '../components/BoardSettingsPanel'
 import FilterBar from '../components/FilterBar'
 
 export interface FilterState {
@@ -35,7 +35,7 @@ export default function BoardPage() {
   const [activeColId, setActiveColId] = useState<number | null>(null)
   const dragOriginalColRef = useRef<number | null>(null)
   const [editingCard, setEditingCard] = useState<Card | null>(null)
-  const [showMembers, setShowMembers] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const [newColTitle, setNewColTitle] = useState('')
   const [addingCol, setAddingCol] = useState(false)
@@ -248,7 +248,7 @@ export default function BoardPage() {
         >
           {showArchived ? 'Hide Archived' : 'Archived'}
         </button>
-        <button onClick={() => setShowMembers(true)} className="text-white/80 hover:text-white text-sm">Members</button>
+        <button onClick={() => setShowSettings(true)} className="text-white/80 hover:text-white text-sm">Settings</button>
       </header>
 
       <FilterBar filter={filter} onChange={setFilter} boardLabels={boardLabels} />
@@ -352,8 +352,14 @@ export default function BoardPage() {
         />
       )}
 
-      {showMembers && currentBoard && (
-        <MembersModal boardId={boardId} role={currentBoard.role} onClose={() => setShowMembers(false)} />
+      {showSettings && currentBoard && (
+        <BoardSettingsPanel
+          board={currentBoard}
+          boardLabels={boardLabels}
+          onClose={() => setShowSettings(false)}
+          onBoardUpdated={(b) => { setCurrentBoard(b); setBoards(boards.map((x) => x.id === b.id ? b : x)) }}
+          onLabelsChanged={setBoardLabels}
+        />
       )}
     </div>
   )

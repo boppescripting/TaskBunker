@@ -14,8 +14,10 @@ export const getMe = () => api.get('/auth/me')
 // Boards
 export const getBoards = () => api.get('/boards')
 export const createBoard = (title: string, color: string) => api.post('/boards', { title, color })
-export const updateBoard = (id: number, data: Partial<{ title: string; color: string; column_ids: number[] }>) =>
+export const updateBoard = (id: number, data: Partial<{ title: string; color: string; column_ids: number[]; visibility: string }>) =>
   api.patch(`/boards/${id}`, data)
+export const getBoardActivity = (boardId: number) =>
+  api.get(`/boards/${boardId}/activity`)
 export const deleteBoard = (id: number) => api.delete(`/boards/${id}`)
 export const getBoardMembers = (id: number) => api.get(`/boards/${id}/members`)
 export const addBoardMember = (boardId: number, email: string, role: string) =>
