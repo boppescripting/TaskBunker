@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -60,8 +60,7 @@ export default function CardModal({ card, boardId, columns, boards, boardLabels:
   const [editingLabelId, setEditingLabelId] = useState<number | null>(null)
   const [editingLabelName, setEditingLabelName] = useState('')
   const [editingLabelColor, setEditingLabelColor] = useState('')
-const [saving, setSaving] = useState(false)
-  const [showMove, setShowMove] = useState(false)
+const [showMove, setShowMove] = useState(false)
   const [showCopy, setShowCopy] = useState(false)
   const [moveColId, setMoveColId] = useState(card.column_id)
   const [copyColId, setCopyColId] = useState(card.column_id)
@@ -75,11 +74,17 @@ const [saving, setSaving] = useState(false)
     getCardActivity(boardId, card.id).then((r) => setActivity(r.data))
   }, [card.id])
 
-  const save = async () => {
-    setSaving(true)
-    await onSave({ title, description, due_date: dueDate || null, labels, cover_color: coverColor || null })
-    setSaving(false)
-  }
+  const isFirstRender = useRef(true)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return }
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      onSave({ title, description, due_date: dueDate || null, labels, cover_color: coverColor || null })
+    }, 500)
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
+  }, [title, description, dueDate, labels, coverColor])
 
   const toggleLabel = (id: number) => {
     const sid = String(id)
@@ -493,11 +498,8 @@ const [saving, setSaving] = useState(false)
 
           {/* Footer */}
           {canEdit && (
-            <div className="flex items-center justify-between pt-3 border-t">
+            <div className="flex items-center pt-3 border-t">
               <button onClick={onDelete} className="text-red-500 text-sm hover:text-red-700">Delete card</button>
-              <button onClick={save} disabled={saving} className="bg-sky-600 text-white text-sm rounded-lg px-5 py-1.5 hover:bg-sky-700 disabled:opacity-50">
-                {saving ? 'Saving…' : 'Save'}
-              </button>
             </div>
           )}
         </div>
