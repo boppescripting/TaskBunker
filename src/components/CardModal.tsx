@@ -221,20 +221,21 @@ const [saving, setSaving] = useState(false)
                     {editingDesc || !description ? (
                       <textarea
                         autoFocus={editingDesc}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300 resize-none font-mono"
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300 resize-none"
                         rows={4}
-                        placeholder="Add a description… (Markdown supported)"
+                        placeholder="Add a description…"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
+                        onFocus={() => setEditingDesc(true)}
                         onBlur={() => setEditingDesc(false)}
                         disabled={!canEdit}
                       />
                     ) : (
                       <div
-                        className="prose prose-sm max-w-none text-gray-700 cursor-pointer hover:bg-gray-50 rounded p-2 -m-2"
+                        className="text-sm text-gray-700 whitespace-pre-wrap cursor-pointer hover:bg-gray-50 rounded p-2 -m-2"
                         onClick={() => canEdit && setEditingDesc(true)}
                       >
-                        <ReactMarkdown remarkPlugins={mdPlugins} components={mdComponents}>{description}</ReactMarkdown>
+                        {description}
                       </div>
                     )}
                   </div>
