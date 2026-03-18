@@ -11,6 +11,27 @@ const mdComponents = {
     </a>
   ),
 }
+function linkifyText(text: string) {
+  const urlRegex = /https?:\/\/[^\s]+/g
+  const parts: (string | React.ReactElement)[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  let key = 0
+  while ((match = urlRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
+    const url = match[0]
+    parts.push(
+      <a key={key++} href={url} target="_blank" rel="noopener noreferrer"
+        className="text-sky-600 underline hover:text-sky-800 break-all"
+        onClick={(e) => e.stopPropagation()}
+      >{url}</a>
+    )
+    lastIndex = match.index + url.length
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+  return parts
+}
+
 import { useStore } from '../store'
 import type { Card, ChecklistItem, Comment, Assignee, ActivityEntry, Column, Board, BoardLabel } from '../types'
 import { LABEL_COLORS, COVER_COLORS } from '../types'
@@ -240,7 +261,7 @@ const [showMove, setShowMove] = useState(false)
                         className="text-sm text-gray-700 whitespace-pre-wrap cursor-pointer hover:bg-gray-50 rounded p-2 -m-2"
                         onClick={() => canEdit && setEditingDesc(true)}
                       >
-                        {description}
+                        {linkifyText(description)}
                       </div>
                     )}
                   </div>
